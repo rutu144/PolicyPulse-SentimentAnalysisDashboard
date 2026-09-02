@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolicyPulse | Sentiment Analysis Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="main-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-chart-line logo-icon"></i>
+                    <span>PolicyPulse</span>
+                </div>
+                <p class="tagline">Governance Insights</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active"><a href="#"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="#"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="#"><i class="fas fa-info-circle"></i> About</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <p>© 2025 PolicyPulse</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Top Navigation -->
+            <nav class="top-nav">
+                <div class="container-fluid">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
+                        <div class="user-info">
+                            <span>Welcome, Admin</span>
+                            <i class="fas fa-user-circle ms-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Dashboard Content -->
+            <div class="container-fluid dashboard-content">
+                <!-- Header Banner -->
+                <div class="header-banner mb-4">
+                    <div class="banner-content">
+                        <h1>Policy Sentiment Analysis</h1>
+                        <p>Unlocking public opinion insights through advanced NLP analytics</p>
+                    </div>
+                </div>
+
+                <!-- Filters Card -->
+                <div class="card filter-card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3"><i class="fas fa-filter me-2"></i>Filter Options</h5>
+                        <form method="POST" class="row g-3">
+                            <div class="col-md-4 col-lg-2">
+                                <label for="policy" class="form-label">Policy</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-file-alt"></i></span>
+                                    <select name="policy" id="policy" class="form-select">
+                                        {% for policy in policies %}
+                                            <option value="{{ policy }}" {% if policy == selected_policy %}selected{% endif %}>
+                                                {{ policy }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-lg-2">
+                                <label for="search" class="form-label">Search</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" name="search" id="search" class="form-control" value="{{ search_query }}" placeholder="Keywords...">
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-lg-2">
+                                <label for="sentiment" class="form-label">Sentiment</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-smile"></i></span>
+                                    <select name="sentiment" id="sentiment" class="form-select">
+                                        <option value="all" {% if sentiment_filter == 'all' %}selected{% endif %}>All</option>
+                                        <option value="negative" {% if sentiment_filter == 'negative' %}selected{% endif %}>Negative</option>
+                                        <option value="neutral" {% if sentiment_filter == 'neutral' %}selected{% endif %}>Neutral</option>
+                                        <option value="positive" {% if sentiment_filter == 'positive' %}selected{% endif %}>Positive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-lg-2">
+                                <label for="date_start" class="form-label">Start Date</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    <input type="date" name="date_start" id="date_start" class="form-control" value="{{ date_start }}" min="{{ min_date }}" max="{{ max_date }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-lg-2">
+                                <label for="date_end" class="form-label">End Date</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    <input type="date" name="date_end" id="date_end" class="form-control" value="{{ date_end }}" min="{{ min_date }}" max="{{ max_date }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-lg-2 d-flex align-items-end">
+                                <div class="btn-group w-100">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-1"></i> Apply</button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="document.querySelector('form').reset(); document.querySelector('form').submit();"><i class="fas fa-redo-alt"></i></button>
+                                </div>
+                            </div>
+                            <div class="col-12 mt-3">
+                                <div class="download-btn">
+                                    <button type="submit" formaction="/download_tweets" class="btn btn-success"><i class="fas fa-download me-1"></i> Export Data</button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="loading" class="text-center d-none mt-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Stats -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-card-body">
+                                <div class="stat-card-icon bg-primary">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <div class="stat-card-info">
+                                    <div class="stat-card-value">{{ total_tweets }}</div>
+                                    <div class="stat-card-title">Total Tweets</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-card-body">
+                                <div class="stat-card-icon bg-danger">
+                                    <i class="fas fa-thumbs-down"></i>
+                                </div>
+                                <div class="stat-card-info">
+                                    <div class="stat-card-value">{{ sentiment_percentages['Negative'] | round(1) }}%</div>
+                                    <div class="stat-card-title">Negative</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-card-body">
+                                <div class="stat-card-icon bg-warning">
+                                    <i class="fas fa-minus-circle"></i>
+                                </div>
+                                <div class="stat-card-info">
+                                    <div class="stat-card-value">{{ sentiment_percentages['Neutral'] | round(1) }}%</div>
+                                    <div class="stat-card-title">Neutral</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-card-body">
+                                <div class="stat-card-icon bg-success">
+                                    <i class="fas fa-thumbs-up"></i>
+                                </div>
+                                <div class="stat-card-info">
+                                    <div class="stat-card-value">{{ sentiment_percentages['Positive'] | round(1) }}%</div>
+                                    <div class="stat-card-title">Positive</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row mb-4">
+                    <!-- Sentiment Trends -->
+                    <div class="col-lg-8">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>Sentiment Trends</h5>
+                                <span class="badge bg-primary">{{ selected_policy }}</span>
+                            </div>
+                            <div class="card-body">
+                                {% if total_tweets > 0 %}
+                                    <img src="data:image/png;base64,{{ sentiment_plot }}" alt="Sentiment Trends" class="img-fluid">
+                                {% else %}
+                                    <div class="no-data-message">
+                                        <i class="fas fa-chart-area"></i>
+                                        <p>No data available for the selected filters</p>
+                                        <small>Try broadening your search criteria</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Word Cloud -->
+                    <div class="col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title"><i class="fas fa-cloud me-2"></i>Key Terms</h5>
+                                <span class="badge bg-primary">{{ selected_policy }}</span>
+                            </div>
+                            <div class="card-body">
+                                {% if total_tweets > 0 %}
+                                    <img src="data:image/png;base64,{{ wordcloud_img }}" alt="Word Cloud" class="img-fluid">
+                                {% else %}
+                                    <div class="no-data-message">
+                                        <i class="fas fa-cloud"></i>
+                                        <p>No data available for the selected filters</p>
+                                        <small>Try broadening your search criteria</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tweet Tables Row -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title"><i class="fas fa-stream me-2"></i>Tweet Analysis</h5>
+                                <span class="badge bg-primary">{{ selected_policy }}</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="nav nav-tabs" id="sentimentTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="negative-tab" data-bs-toggle="tab" data-bs-target="#negative" type="button" role="tab" aria-controls="negative" aria-selected="true">
+                                            <i class="fas fa-thumbs-down text-danger me-1"></i> Negative ({{ sentiment_percentages['Negative'] | round(1) }}%)
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="neutral-tab" data-bs-toggle="tab" data-bs-target="#neutral" type="button" role="tab" aria-controls="neutral" aria-selected="false">
+                                            <i class="fas fa-minus-circle text-warning me-1"></i> Neutral ({{ sentiment_percentages['Neutral'] | round(1) }}%)
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="positive-tab" data-bs-toggle="tab" data-bs-target="#positive" type="button" role="tab" aria-controls="positive" aria-selected="false">
+                                            <i class="fas fa-thumbs-up text-success me-1"></i> Positive ({{ sentiment_percentages['Positive'] | round(1) }}%)
+                                        </button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content" id="sentimentTabsContent">
+                                    <div class="tab-pane fade show active" id="negative" role="tabpanel" aria-labelledby="negative-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">#</th>
+                                                        <th scope="col">Tweet</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for tweet in negative_tweets %}
+                                                        <tr>
+                                                            <td class="text-muted">{{ loop.index }}</td>
+                                                            <td data-bs-toggle="tooltip" title="{{ tweet.text }}">{{ tweet.text | truncate(80) }}</td>
+                                                        </tr>
+                                                    {% else %}
+                                                        <tr>
+                                                            <td colspan="2" class="text-center">No negative tweets found</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="neutral" role="tabpanel" aria-labelledby="neutral-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">#</th>
+                                                        <th scope="col">Tweet</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for tweet in neutral_tweets %}
+                                                        <tr>
+                                                            <td class="text-muted">{{ loop.index }}</td>
+                                                            <td data-bs-toggle="tooltip" title="{{ tweet.text }}">{{ tweet.text | truncate(80) }}</td>
+                                                        </tr>
+                                                    {% else %}
+                                                        <tr>
+                                                            <td colspan="2" class="text-center">No neutral tweets found</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="positive" role="tabpanel" aria-labelledby="positive-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">#</th>
+                                                        <th scope="col">Tweet</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for tweet in positive_tweets %}
+                                                        <tr>
+                                                            <td class="text-muted">{{ loop.index }}</td>
+                                                            <td data-bs-toggle="tooltip" title="{{ tweet.text }}">{{ tweet.text | truncate(80) }}</td>
+                                                        </tr>
+                                                    {% else %}
+                                                        <tr>
+                                                            <td colspan="2" class="text-center">No positive tweets found</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Topics Card -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title"><i class="fas fa-tags me-2"></i>Key Topics</h5>
+                                <span class="badge bg-primary">{{ selected_policy }}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    {% for topic in topics %}
+                                        <div class="col-md-4 mb-3">
+                                            <div class="topic-card">
+                                                <i class="fas fa-lightbulb topic-icon"></i>
+                                                <p class="topic-text">{{ topic }}</p>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p>&copy; 2025 PolicyPulse - Sentiment Analysis for Policy Impact Assessment</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <p><i class="fas fa-code"></i> with <i class="fas fa-heart"></i> by Team PolicyPulse</p>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>
